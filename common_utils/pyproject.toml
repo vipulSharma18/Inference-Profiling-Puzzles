@@ -1,7 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "common-utils"
 version = "0.1.0"
-description = "Add your description here"
+description = "Common code like model definitions used across problems."
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+authors = [
+    { name = "Vipul Sharma", email = "vipuls181999@gmail.com" }
+]
+dependencies = [
+    "torch",
+    "torchao",
+    "huggingface_hub",
+    "safetensors",
+]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu128" }
+torchao = { index = "pytorch-cu128" }
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true

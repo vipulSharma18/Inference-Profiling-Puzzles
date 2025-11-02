@@ -1,7 +1,24 @@
 [project]
 name = "torchao-float8"
 version = "0.1.0"
-description = "Add your description here"
+description = "Reproducing the slowdown seen in torchao FP8 weights only config for llama3.1-8B inference."
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+authors = [
+    { name = "Vipul Sharma", email = "vipuls181999@gmail.com" }
+]
+dependencies = [
+    "torch==2.8.0",
+    "torchao==0.13.0",
+    "common_utils",
+]
+
+[tool.uv.sources]
+common_utils = { path = "../common-utils" , editable = true }
+torch = { index = "pytorch-cu128" }
+torchao = { index = "pytorch-cu128" }
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
