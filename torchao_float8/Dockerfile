@@ -16,12 +16,35 @@ RUN apt-get update && apt-get install -y \
     python3.12-venv \
     git \
     curl \
+    wget \
+    build-essential \
+    vim \
+    ca-certificates \
+    openssh-server \
+    openssh-client \
+    procps \
     && rm -rf /var/lib/apt/lists/*
 
+# add keyring for gh/github cli for git creds management
+RUN mkdir -p -m 755 /etc/apt/keyrings \
+&& out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+&& cat $out | tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
+&& chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+&& mkdir -p -m 755 /etc/apt/sources.list.d \
+&& echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+&& apt-get update \ 
+&& apt-get install -y gh \
+&& rm -rf /var/lib/apt/lists/*
+
 # Install uv
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
-    . $HOME/.cargo/env
-ENV PATH="/root/.cargo/bin:${PATH}"
+# Download the latest installer
+ADD https://astral.sh/uv/install.sh /uv-installer.sh
+
+# Run the installer then remove it
+RUN sh /uv-installer.sh && rm /uv-installer.sh
+
+# Ensure the installed binary is on the `PATH`
+ENV PATH="/root/.local/bin/:$PATH"
 
 # Set working directory
 WORKDIR /workspace
@@ -35,7 +58,7 @@ COPY torchao_float8/uv.lock /workspace/torchao_float8/
 
 # Install dependencies with uv (leverages cache)
 WORKDIR /workspace/torchao_float8
-RUN /root/.cargo/bin/uv sync --frozen
+RUN uv sync --frozen
 
 # Copy the rest of the application code
 COPY torchao_float8 /workspace/torchao_float8
