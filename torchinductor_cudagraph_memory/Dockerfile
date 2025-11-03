@@ -56,12 +56,15 @@ COPY common_utils /workspace/common_utils
 COPY torchinductor_cudagraph_memory/pyproject.toml /workspace/torchinductor_cudagraph_memory/
 COPY torchinductor_cudagraph_memory/uv.lock /workspace/torchinductor_cudagraph_memory/
 
-# Install dependencies with uv (leverages cache)
+# Install dependencies only (leverages cache)
 WORKDIR /workspace/torchinductor_cudagraph_memory
-RUN uv sync --frozen
+RUN uv sync --frozen --no-install-project
 
 # Copy the rest of the application code
 COPY torchinductor_cudagraph_memory /workspace/torchinductor_cudagraph_memory
+
+# Install the project itself
+RUN uv sync --frozen
 
 # Set the default command
 CMD ["/bin/bash"]

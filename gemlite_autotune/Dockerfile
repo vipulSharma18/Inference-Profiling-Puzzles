@@ -56,12 +56,15 @@ COPY common_utils /workspace/common_utils
 COPY gemlite_autotune/pyproject.toml /workspace/gemlite_autotune/
 COPY gemlite_autotune/uv.lock /workspace/gemlite_autotune/
 
-# Install dependencies with uv (leverages cache)
+# Install dependencies only (leverages cache)
 WORKDIR /workspace/gemlite_autotune
-RUN uv sync --frozen
+RUN uv sync --frozen --no-install-project
 
 # Copy the rest of the application code
 COPY gemlite_autotune /workspace/gemlite_autotune
+
+# Install the project itself
+RUN uv sync --frozen
 
 # Set the default command
 CMD ["/bin/bash"]

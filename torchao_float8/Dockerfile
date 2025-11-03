@@ -56,12 +56,15 @@ COPY common_utils /workspace/common_utils
 COPY torchao_float8/pyproject.toml /workspace/torchao_float8/
 COPY torchao_float8/uv.lock /workspace/torchao_float8/
 
-# Install dependencies with uv (leverages cache)
+# Install dependencies only (leverages cache)
 WORKDIR /workspace/torchao_float8
-RUN uv sync --frozen
+RUN uv sync --frozen --no-install-project
 
 # Copy the rest of the application code
 COPY torchao_float8 /workspace/torchao_float8
+
+# Install the project itself
+RUN uv sync --frozen
 
 # Set the default command
 CMD ["/bin/bash"]
