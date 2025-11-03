@@ -9,8 +9,16 @@ export CHECKPOINT_PATH=checkpoints # path to checkpoints folder
 
 # README BENCHMARKS
 export MODEL_REPO=unsloth/Meta-Llama-3.1-8B
+
+# baseline
 python generate.py --checkpoint_path $CHECKPOINT_PATH/$MODEL_REPO/model.pth --compile --write_result benchmark_results.txt
+
+# fp8 weights only
 python generate.py --checkpoint_path $CHECKPOINT_PATH/$MODEL_REPO/model.pth --compile --quantization float8wo --write_result benchmark_results.txt
+
+# fp8 dynamic quantization, still weights only: tensor-wise scaling
 python generate.py --checkpoint_path $CHECKPOINT_PATH/$MODEL_REPO/model.pth --compile --quantization float8dq-tensor --write_result benchmark_results.txt
-python generate.py --checkpoint_path $CHECKPOINT_PATH/$MODEL_REPO/model.pth --compile --quantization float8dq-wo --write_result benchmark_results.txt
+
+# fp8 dq, still wo: row-wise scaling factor
+python generate.py --checkpoint_path $CHECKPOINT_PATH/$MODEL_REPO/model.pth --compile --quantization float8dq-row --write_result benchmark_results.txt
 ```
