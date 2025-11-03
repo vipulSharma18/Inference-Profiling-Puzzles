@@ -1,7 +1,30 @@
+[build-system]
+requires = ["uv_build>=0.9.6,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "llama_cudagraph"
+module-root = ""
+
 [project]
-name = "torchinductor-cudagraph-memory"
+name = "torchinductor_cudagraph_memory"
 version = "0.1.0"
-description = "Add your description here"
+description = "Reproducing the memory overhead introduced by torch dynamo, inductor, and cudagraphs."
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+authors = [
+    { name = "Vipul Sharma", email = "vipuls181999@gmail.com" }
+]
+dependencies = [
+    "torch==2.8.0",
+    "common_utils",
+]
+
+[tool.uv.sources]
+common_utils = { path = "../common_utils" , editable = true }
+torch = { index = "pytorch-cu128" }
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true

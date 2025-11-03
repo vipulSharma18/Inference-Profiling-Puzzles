@@ -1,3 +1,11 @@
+[build-system]
+requires = ["uv_build>=0.9.6,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "llama_benchmark"
+module-root = ""
+
 [project]
 name = "torchao-float8"
 version = "0.1.0"
@@ -14,7 +22,7 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-common_utils = { path = "../common-utils" , editable = true }
+common_utils = { path = "../common_utils" , editable = true }
 torch = { index = "pytorch-cu128" }
 torchao = { index = "pytorch-cu128" }
 
