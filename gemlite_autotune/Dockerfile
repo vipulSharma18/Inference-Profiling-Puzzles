@@ -6,10 +6,14 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
     UV_CACHE_DIR=/root/.cache/uv
 
-# Install system dependencies
+# Install system dependencies including Python 3.12 from deadsnakes PPA
 RUN apt-get update && apt-get install -y \
+    software-properties-common \
+    && add-apt-repository ppa:deadsnakes/ppa -y \
+    && apt-get update && apt-get install -y \
     python3.12 \
     python3.12-dev \
+    python3.12-distutils \
     python3-pip \
     git \
     curl \
