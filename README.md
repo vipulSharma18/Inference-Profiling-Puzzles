@@ -1,17 +1,12 @@
 # Inference Profiling and Optimization Guide
+Explore commonly faced profiling scenarios and develop an intuition for how to break down profiling problems and find the bottleneck.
+
 > Note: Project is in the ideation stage, with the creation of problems in progress.
 
-## Docker Build Status
+The project can be run by using docker containers to ensure complete reproducibility of the inference environment.
 
-[![TorchAO Float8](https://github.com/vipulSharma18/Inference-Profiling-and-Optimization-Guide/actions/workflows/build-torchao-float8.yml/badge.svg)](https://github.com/vipulSharma18/Inference-Profiling-and-Optimization-Guide/actions/workflows/build-torchao-float8.yml) **Problem 1: TorchAO Float8**
+[![Problem 1: TorchAO Float8](https://github.com/vipulSharma18/Inference-Profiling-and-Optimization-Guide/actions/workflows/build-torchao-float8.yml/badge.svg)](https://github.com/vipulSharma18/Inference-Profiling-and-Optimization-Guide/actions/workflows/build-torchao-float8.yml)    [![Problem 2: GemLite Autotune](https://github.com/vipulSharma18/Inference-Profiling-and-Optimization-Guide/actions/workflows/build-gemlite-autotune.yml/badge.svg)](https://github.com/vipulSharma18/Inference-Profiling-and-Optimization-Guide/actions/workflows/build-gemlite-autotune.yml)    [![Problem 3: TorchInductor CUDA Graph Memory](https://github.com/vipulSharma18/Inference-Profiling-and-Optimization-Guide/actions/workflows/build-torchinductor-cudagraph.yml/badge.svg)](https://github.com/vipulSharma18/Inference-Profiling-and-Optimization-Guide/actions/workflows/build-torchinductor-cudagraph.yml)
 
-[![GemLite Autotune](https://github.com/vipulSharma18/Inference-Profiling-and-Optimization-Guide/actions/workflows/build-gemlite-autotune.yml/badge.svg)](https://github.com/vipulSharma18/Inference-Profiling-and-Optimization-Guide/actions/workflows/build-gemlite-autotune.yml) **Problem 2: GemLite Autotune**
-
-[![TorchInductor CUDA Graph Memory](https://github.com/vipulSharma18/Inference-Profiling-and-Optimization-Guide/actions/workflows/build-torchinductor-cudagraph.yml/badge.svg)](https://github.com/vipulSharma18/Inference-Profiling-and-Optimization-Guide/actions/workflows/build-torchinductor-cudagraph.yml) **Problem 3: TorchInductor CUDA Graph Memory**
-
----
-
-Explore commonly faced profiling scenarios and develop an intuition for how to break down profiling problems and find the bottleneck.
 
 ## Profilers used:
 1. Torch Profiler
