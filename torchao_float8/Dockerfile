@@ -48,7 +48,5 @@ COPY torchao_float8 /workspace/torchao_float8
 # Install the project itself
 RUN uv sync --frozen
 
-ENTRYPOINT [ "/workspace/torchao_float8/entrypoint.sh" ]
-
 # Set the default command
 CMD ["/bin/bash", "-c", "echo '[dockerfile] Container Started' && sleep infinity"]

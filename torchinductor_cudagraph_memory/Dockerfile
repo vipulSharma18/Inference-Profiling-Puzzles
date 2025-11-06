@@ -48,7 +48,5 @@ COPY torchinductor_cudagraph_memory /workspace/torchinductor_cudagraph_memory
 # Install the project itself
 RUN uv sync --frozen
 
-ENTRYPOINT [ "/workspace/torchinductor_cudagraph_memory/entrypoint.sh" ]
-
 # Set the default command
 CMD ["/bin/bash", "-c", "echo '[dockerfile] Container Started' && sleep infinity"]
