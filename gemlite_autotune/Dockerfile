@@ -49,6 +49,7 @@ COPY gemlite_autotune /workspace/gemlite_autotune
 
 # Install the project itself
 RUN uv sync --frozen
+ENTRYPOINT ["/workspace/gemlite_autotune/entrypoint.sh"]
 
 # Set the default command
 CMD ["/bin/bash", "-c", "echo '[dockerfile] Container Started' && sleep infinity"]

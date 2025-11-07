@@ -8,7 +8,7 @@ source /workspace/torchinductor_cudagraph_memory/.venv/bin/activate
 
 echo "[entrypoint] Running prepare script from common_utils."
 cd /workspace/common_utils
-bash scripts/prepare.sh
+bash scripts/prepare.sh || echo "[entrypoint] Prepare script failed, proceeding to next steps."
 cd /workspace
 echo "[entrypoint] entrypoint script complete"
 
