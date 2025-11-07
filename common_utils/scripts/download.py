@@ -15,7 +15,8 @@ from requests.exceptions import HTTPError
 def hf_download(repo_id: Optional[str] = None, hf_token: Optional[str] = None) -> None:
     from huggingface_hub import snapshot_download
 
-    path = os.path.abspath(f"~/checkpoints/{repo_id}")
+    path = os.path.abspath(os.path.expanduser(f"~/checkpoints/{repo_id}"))
+    print(f"Downloading {repo_id} to {path}.")
     os.makedirs(path, exist_ok=True)
     try:
         snapshot_download(
