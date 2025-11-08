@@ -29,28 +29,25 @@ RUN sh /uv-installer.sh && rm /uv-installer.sh
 # Ensure the installed binary is on the `PATH`
 ENV PATH="/root/.local/bin/:$PATH"
 
+# Accept build arguments for git repo and commit
+ARG GIT_REPO
+ARG GIT_COMMIT
+
 # Set working directory
 WORKDIR /workspace
 
-# Copy common_utils first (dependency)
-COPY common_utils /workspace/common_utils
+# Clone the repository with sparse-checkout
+RUN git clone --no-checkout ${GIT_REPO} /workspace && \
+    cd /workspace && \
+    git sparse-checkout init --cone && \
+    git sparse-checkout set torchao_float8 common_utils && \
+    git checkout ${GIT_COMMIT}
 
-# Copy package files
-COPY torchao_float8/pyproject.toml /workspace/torchao_float8/
-COPY torchao_float8/uv.lock /workspace/torchao_float8/
-COPY torchao_float8/.python-version /workspace/torchao_float8/
-
-# Install dependencies only (leverages cache)
+# Install dependencies
 WORKDIR /workspace/torchao_float8
-RUN uv python install 3.12
-RUN uv venv --python 3.12
-RUN uv sync --frozen --no-install-project
-
-# Copy the rest of the application code
-COPY torchao_float8 /workspace/torchao_float8
-
-# Install the project itself
-RUN uv sync --frozen
+RUN uv python install 3.12 && \
+    uv venv --python 3.12 && \
+    uv sync --frozen
 ENTRYPOINT ["/workspace/torchao_float8/entrypoint.sh"]
 
 # Set the default command
