@@ -76,7 +76,7 @@ wd = Path(__file__).parent.parent.resolve()
 sys.path.append(str(wd))
 
 from torchao._models.llama.model import Transformer, prepare_inputs_for_model
-from torchao._models.llama.tokenizer import get_tokenizer
+from tokenizers import Tokenizer
 
 
 def multinomial_sample_one_no_sync(
@@ -235,9 +235,9 @@ def generate(
 
 
 def encode_tokens(tokenizer, string, bos=True, device=default_device):
-    tokens = tokenizer.encode(string)
+    tokens = tokenizer.encode(string).ids
     if bos:
-        tokens = [tokenizer.bos_id()] + tokens
+        tokens = [128000] + tokens
     return torch.tensor(tokens, dtype=torch.int, device=device)
 
 
@@ -300,8 +300,9 @@ def main(
 
     torchao.quantization.utils.recommended_inductor_config_setter()
 
+    checkpoint_path = checkpoint_path.expanduser().absolute()
     assert checkpoint_path.is_file(), checkpoint_path
-    tokenizer_path = checkpoint_path.parent / "tokenizer.model"
+    tokenizer_path = checkpoint_path.parent / "tokenizer.json"
     assert tokenizer_path.is_file(), str(tokenizer_path)
 
     print(f"Using device={device}")
@@ -314,7 +315,7 @@ def main(
     device_sync(device=device)  # MKG
     print(f"Time to load model: {time.time() - t0:.02f} seconds")
 
-    tokenizer = get_tokenizer(tokenizer_path, checkpoint_path)
+    tokenizer = Tokenizer.from_file(tokenizer_path)
 
     encoded = encode_tokens(tokenizer, prompt, bos=True, device=device)
 
@@ -343,82 +344,15 @@ def main(
             Float8DynamicActivationFloat8SemiSparseWeightConfig,
             Float8DynamicActivationFloat8WeightConfig,
             Float8WeightOnlyConfig,
-            FPXWeightOnlyConfig,
-            GemliteUIntXWeightOnlyConfig,
-            Int4DynamicActivationInt4WeightConfig,
             Int4WeightOnlyConfig,
-            Int8DynamicActivationInt4WeightConfig,
-            Int8DynamicActivationInt8WeightConfig,
             Int8WeightOnlyConfig,
-            UIntXWeightOnlyConfig,
-            autoquant,
             quantize_,
         )
         from torchao.quantization.granularity import PerRow, PerTensor
 
-        if "spinquant" in quantization:
-            from torchao.prototype.spinquant import apply_spinquant
-
-            apply_spinquant(model)
-        if quantization.startswith("gemlite"):
-            import os
-            import pwd
-
-            import gemlite
-
-            gemlite.set_autotune("max")
-            config_file = f"/tmp/{pwd.getpwuid(os.getuid()).pw_gecos}_gemlite.json"
-
-            _quant_args = quantization.split("-")
-            bit_width = int(_quant_args[1])
-            group_size = None if _quant_args[2] == "None" else int(_quant_args[2])
-            mode = "dynamic" if _quant_args[3] == "dq" else "weight_only"
-
-            quantize_(
-                model,
-                GemliteUIntXWeightOnlyConfig(
-                    bit_width=bit_width, group_size=group_size, mode=mode
-                ),
-            )
-
-            gemlite.load_config(config_file)
-
-            print("running gemlite warmup")
-            generate(
-                model,
-                encode_tokens(tokenizer, prompt, bos=True, device=device),
-                max_new_tokens,
-                batch_size,
-                interactive=False,
-                temperature=temperature,
-                top_k=top_k,
-            )
-            gemlite.cache_config(config_file)
-
         if "int8wo" in quantization:
             quantize_(model, Int8WeightOnlyConfig())
-        if "int8dq" in quantization:
-            if sparsity and "semi" in sparsity:
-                from torchao.dtypes import SemiSparseLayout
-
-                quantize_(
-                    model,
-                    Int8DynamicActivationInt8WeightConfig(layout=SemiSparseLayout()),
-                    filter_fn=ffn_only,
-                )
-                quantize_(
-                    model,
-                    Int8DynamicActivationInt8WeightConfig(),
-                    filter_fn=not_ffn_only,
-                )
-            elif "int8dq_prefill_wo_decode" in quantization:
-                quantize_(
-                    model,
-                    Int8DynamicActivationInt8WeightConfig(weight_only_decode=True),
-                )
-            else:
-                quantize_(model, Int8DynamicActivationInt8WeightConfig())
-        if "int4wo" in quantization:
+        elif "int4wo" in quantization:
             use_hqq = False
             if "hqq" in quantization:
                 use_hqq = True
@@ -434,144 +368,6 @@ def main(
             quantize_(
                 model,
                 Int4WeightOnlyConfig(group_size=group_size, use_hqq=use_hqq, version=1),
-            )
-        elif "int4dq-" in quantization:
-            from torchao.dtypes import CutlassInt4PackedLayout
-
-            nbits = int(quantization.removeprefix("int4dq-"))
-            assert nbits == 4 or nbits == 8
-            if nbits == 4:
-                quantize_(
-                    model,
-                    Int4DynamicActivationInt4WeightConfig(
-                        mapping_type=MappingType.SYMMETRIC,
-                        act_mapping_type=MappingType.SYMMETRIC,
-                        layout=CutlassInt4PackedLayout(),
-                    ),
-                )
-            elif nbits == 8:
-                quantize_(
-                    model,
-                    Int8DynamicActivationInt4WeightConfig(
-                        group_size=None,
-                        mapping_type=MappingType.SYMMETRIC,
-                        act_mapping_type=MappingType.SYMMETRIC,
-                        layout=CutlassInt4PackedLayout(),
-                    ),
-                )
-        if "marlin" in quantization:
-            if "qqq" in quantization:
-                from torchao.dtypes import MarlinQQQLayout
-
-                quantize_(
-                    model,
-                    Int8DynamicActivationInt4WeightConfig(
-                        group_size=128,
-                        mapping_type=MappingType.SYMMETRIC,
-                        act_mapping_type=MappingType.SYMMETRIC,
-                        layout=MarlinQQQLayout(),
-                    ),
-                )
-            elif "semi" in sparsity:
-                from torchao.dtypes import MarlinSparseLayout
-
-                quantize_(
-                    model,
-                    Int4WeightOnlyConfig(layout=MarlinSparseLayout(), version=1),
-                    filter_fn=ffn_or_attn_only,
-                )
-        if "fp6" in quantization:
-            quantize_(model, FPXWeightOnlyConfig(3, 2))
-        elif "embed-int8wo" in quantization:
-            quantize_(
-                model,
-                Int8WeightOnlyConfig(group_size=64),
-                filter_fn=lambda x, *args: isinstance(x, torch.nn.Embedding),
-            )
-        elif quantization.startswith("awq"):
-            from torchao._models._eval import TransformerEvalWrapper
-            from torchao.prototype.awq import (
-                AWQObservedLinear,
-                awq_uintx,
-                insert_awq_observer_,
-            )
-
-            quant_dtype = quantization.split("-")[1]
-            group_size = int(quantization.split("-")[2])
-            quant_dtype = getattr(torch, quant_dtype, torch.uint8)
-            model = model.to(device)
-            # get calibration data
-            insert_awq_observer_(
-                model, 1, 256, quant_dtype=quant_dtype, group_size=group_size
-            )
-            TransformerEvalWrapper(
-                model=model.to(device),
-                tokenizer=tokenizer,
-                max_seq_length=256,
-                input_prep_func=prepare_inputs_for_model,
-                device=device,
-            ).run_eval(
-                tasks=["wikitext"],
-                limit=1,
-            )
-            is_observed_linear = lambda m, fqn: isinstance(m, AWQObservedLinear)
-            use_hqq = "hqq" in quantization
-            quantize_(
-                model,
-                awq_uintx(
-                    quant_dtype=quant_dtype, group_size=group_size, use_hqq=use_hqq
-                ),
-                is_observed_linear,
-            )
-        elif "uintx" in quantization:
-            # uintx-nbits-group_size, e.g. "uintx-2-64"
-            if "hqq" in quantization:
-                # uintx-nbits-group_size-hqq
-                use_hqq = True
-            else:
-                use_hqq = False
-            _quant_args = quantization.split("-")
-            nbits = int(_quant_args[1])
-            assert nbits >= 1 and nbits <= 8, "nbits must be 1 to 8"
-            _NBITS_TO_DTYPE = {
-                1: torch.uint1,
-                2: torch.uint2,
-                3: torch.uint3,
-                4: torch.uint4,
-                5: torch.uint5,
-                6: torch.uint6,
-                7: torch.uint7,
-                8: torch.uint8,
-            }
-            dtype = _NBITS_TO_DTYPE[nbits]
-            group_size = int(_quant_args[2])
-            quantize_(model, UIntXWeightOnlyConfig(dtype, group_size, use_hqq=use_hqq))
-        elif "int8_dynamic_activation_intx_weight" in quantization:
-            assert precision == torch.float32, (
-                "int8_dynamic_activation_intx_weight requires using precision=torch.float32"
-            )
-
-            from torchao.quantization.granularity import PerAxis, PerGroup
-            from torchao.quantization.quant_api import (
-                Int8DynamicActivationIntxWeightConfig,
-            )
-
-            # Quantize model
-            _quant_args = quantization.split("-")
-            weight_dtype = getattr(torch, f"int{_quant_args[1]}")
-            group_size = int(_quant_args[2])
-            granularity = PerGroup(group_size) if group_size > 0 else PerAxis(0)
-            is_asymmetric = bool(_quant_args[3].lower() == "true")
-            quantize_(
-                model,
-                Int8DynamicActivationIntxWeightConfig(
-                    weight_dtype=weight_dtype,
-                    weight_granularity=granularity,
-                    weight_mapping_type=MappingType.ASYMMETRIC
-                    if is_asymmetric
-                    else MappingType.SYMMETRIC,
-                    intx_packing_format="opaque_torchao_auto",
-                ),
             )
         elif "float8wo" in quantization:
             quantize_(model, Float8WeightOnlyConfig())
@@ -594,251 +390,6 @@ def main(
                     model,
                     Float8DynamicActivationFloat8WeightConfig(granularity=granularity),
                 )
-        elif "autoquant_v2" in quantization:
-            from torchao._models._eval import LMEvalInputRecorder
-            from torchao._models.llama.model import prepare_inputs_for_model
-            from torchao.prototype.quantization.autoquant_v2 import autoquant_v2
-
-            calibration_seq_length = 256
-            inputs = (
-                LMEvalInputRecorder(
-                    tokenizer,
-                    calibration_seq_length,
-                    prepare_inputs_for_model,
-                    False,  # pad_calibration_inputs
-                    model.config.vocab_size,
-                    device="cuda",
-                )
-                .record_inputs(
-                    ["wikitext"],
-                    1,
-                )
-                .get_recorded_inputs()[0]
-                .values[0]
-            )
-            inputs = prepare_inputs_for_model(inputs)
-            with torch.device("cuda"):
-                model.setup_caches(
-                    max_batch_size=1, max_seq_length=calibration_seq_length
-                )
-
-            if "autoquant_v2-int4" == quantization:
-                model = autoquant_v2(
-                    model,
-                    manual=True,
-                    qtensor_class_list=torchao.prototype.quantization.autoquant_v2.DEFAULT_INT4_AUTOQUANT_CLASS_LIST,
-                    example_input=inputs,
-                    batch_size=calibration_seq_length,
-                )
-            elif "autoquant_v2-float8" == quantization:
-                model = autoquant_v2(
-                    model,
-                    manual=True,
-                    qtensor_class_list=torchao.prototype.quantization.autoquant_v2.OTHER_AUTOQUANT_CLASS_LIST,
-                    example_input=inputs,
-                    batch_size=calibration_seq_length,
-                )
-            elif "autoquant_v2-fp" == quantization:
-                model = autoquant_v2(
-                    model,
-                    manual=True,
-                    qtensor_class_list=torchao.prototype.quantization.autoquant_v2.DEFAULT_FLOAT_AUTOQUANT_CLASS_LIST,
-                    example_input=inputs,
-                    batch_size=calibration_seq_length,
-                )
-            elif "autoquant_v2-all" == quantization:
-                all_qtensor_classes = (
-                    torchao.prototype.quantization.autoquant_v2.DEFAULT_AUTOQUANT_CLASS_LIST
-                    + torchao.prototype.quantization.autoquant_v2.DEFAULT_INT4_AUTOQUANT_CLASS_LIST
-                    + torchao.prototype.quantization.autoquant_v2.DEFAULT_FLOAT_AUTOQUANT_CLASS_LIST
-                )
-                if torchao.utils.is_sm_89():
-                    # this is fp8 related subclasses, should rename
-                    all_qtensor_classes += torchao.prototype.quantization.autoquant_v2.OTHER_AUTOQUANT_CLASS_LIST
-                model = autoquant_v2(
-                    model,
-                    manual=True,
-                    qtensor_class_list=all_qtensor_classes,
-                    example_input=inputs,
-                    batch_size=calibration_seq_length,
-                )
-            else:
-                model = autoquant_v2(
-                    model,
-                    manual=True,
-                    example_input=inputs,
-                    batch_size=calibration_seq_length,
-                )
-
-            print("running generate")
-            generate(
-                model,
-                encode_tokens(tokenizer, prompt, bos=True, device=device),
-                max_new_tokens,
-                batch_size,
-                interactive=False,
-                temperature=temperature,
-                top_k=top_k,
-            )
-
-            print("running finalize autoquant")
-            # do autoquantization
-            model.finalize_autoquant()
-        elif "autoquant" in quantization:
-            from torchao._models._eval import LMEvalInputRecorder
-            from torchao._models.llama.model import prepare_inputs_for_model
-
-            calibration_seq_length = 256
-            inputs = (
-                LMEvalInputRecorder(
-                    tokenizer,
-                    calibration_seq_length,
-                    prepare_inputs_for_model,
-                    False,  # pad_calibration_inputs
-                    model.config.vocab_size,
-                    device="cuda",
-                )
-                .record_inputs(
-                    ["wikitext"],
-                    1,
-                )
-                .get_recorded_inputs()[0]
-                .values[0]
-            )
-            inputs = prepare_inputs_for_model(inputs)
-            with torch.device("cuda"):
-                model.setup_caches(
-                    max_batch_size=1, max_seq_length=calibration_seq_length
-                )
-
-            if "autoquant-int4" == quantization:
-                model = autoquant(
-                    model,
-                    manual=True,
-                    qtensor_class_list=torchao.quantization.DEFAULT_INT4_AUTOQUANT_CLASS_LIST,
-                    example_input=inputs,
-                    min_sqnr=min_sqnr,
-                )
-            elif "autoquant-float8" == quantization:
-                model = autoquant(
-                    model,
-                    manual=True,
-                    qtensor_class_list=torchao.quantization.OTHER_AUTOQUANT_CLASS_LIST,
-                    example_input=inputs,
-                    min_sqnr=min_sqnr,
-                )
-            elif "autoquant-fp" == quantization:
-                model = autoquant(
-                    model,
-                    manual=True,
-                    qtensor_class_list=torchao.quantization.DEFAULT_FLOAT_AUTOQUANT_CLASS_LIST,
-                    example_input=inputs,
-                    min_sqnr=min_sqnr,
-                )
-            elif "autoquant-sparse" == quantization:
-                model = autoquant(
-                    model,
-                    manual=True,
-                    qtensor_class_list=torchao.quantization.DEFAULT_SPARSE_AUTOQUANT_CLASS_LIST,
-                    example_input=inputs,
-                    min_sqnr=min_sqnr,
-                )
-            elif "autoquant-gemlite-int4" == quantization:
-                import os
-                import pwd
-
-                from gemlite.core import GemLiteLinearTriton
-
-                GemLiteLinearTriton.load_config(
-                    f"/tmp/{pwd.getpwuid(os.getuid()).pw_gecos}_gemlite.json"
-                )
-                model = autoquant(
-                    model,
-                    manual=True,
-                    qtensor_class_list=torchao.quantization.GEMLITE_INT4_AUTOQUANT_CLASS_LIST,
-                    example_input=inputs,
-                    min_sqnr=min_sqnr,
-                )
-            elif "autoquant-all" == quantization:
-                try:
-                    import os
-                    import pwd
-
-                    from gemlite.core import GemLiteLinearTriton
-
-                    GemLiteLinearTriton.load_config(
-                        f"/tmp/{pwd.getpwuid(os.getuid()).pw_gecos}_gemlite.json"
-                    )
-                except:
-                    pass
-
-                model = autoquant(
-                    model,
-                    manual=True,
-                    qtensor_class_list=torchao.quantization.ALL_AUTOQUANT_CLASS_LIST,
-                    example_input=inputs,
-                    min_sqnr=min_sqnr,
-                )
-            else:
-                model = autoquant(
-                    model, manual=True, example_input=inputs, min_sqnr=min_sqnr
-                )
-
-            generate(
-                model,
-                encode_tokens(tokenizer, prompt, bos=True, device=device),
-                max_new_tokens,
-                batch_size,
-                interactive=False,
-                temperature=temperature,
-                top_k=top_k,
-            )
-
-            # do autoquantization
-            model.finalize_autoquant()
-        elif "codebook" in quantization:
-            from torchao.prototype.quantization.codebook import codebook_weight_only
-
-            model.to(device)
-            quantize_(
-                model, codebook_weight_only(dtype=torch.uint4, scale_block_size=64)
-            )
-
-    # standalone sparsity
-    elif sparsity:
-        from torchao.sparsity import semi_sparse_weight, sparsify_
-
-        if "semi" in sparsity:
-            # Fixed sparsity level for 2:4
-            sparsify_(model.to(device), semi_sparse_weight(), filter_fn=ffn_only)
-
-        if "bsr" in sparsity:
-            from torchao.sparsity import SupermaskLinear, block_sparse_weight
-
-            # parse "bsr-0.9-64"
-            _, sparsity_level, blocksize = sparsity.split("-")
-            sparsity_level, blocksize = float(sparsity_level), int(blocksize)
-            sparsify_(
-                model,
-                lambda x: SupermaskLinear.from_linear(
-                    x,
-                    sparsity_level=sparsity_level,
-                    blocksize=blocksize,
-                ),
-                filter_fn=ffn_only,
-            )
-            print(model)
-            sparsify_(
-                model,
-                SupermaskLinear.to_linear,
-                filter_fn=ffn_only,
-            )
-            print(model)
-
-            # Accelerate with triton bsr kernels
-            sparsify_(
-                model, block_sparse_weight(blocksize=blocksize), filter_fn=ffn_only
-            )
 
     model_size = get_model_size_in_bytes(model, ignore_embeddings=True) / 1e9
 
@@ -897,7 +448,7 @@ def main(
 
         if interactive and i >= 0 and prefill_size is None:
             buffer = []
-            period_id = tokenizer.encode(".")[0]
+            period_id = tokenizer.encode(".").ids[0]
             done_generating = False
 
             def callback(x):
@@ -905,7 +456,7 @@ def main(
                 if done_generating:
                     return
                 buffer.append(tokenizer.decode([period_id] + x.squeeze(0).tolist())[1:])
-                if x.item() == tokenizer.eos_id():
+                if x.item() == 128001:  # end of text id
                     done_generating = True
                 if len(buffer) == 4 or done_generating:
                     print("".join(buffer), end="", flush=True)
@@ -970,8 +521,8 @@ def main(
             # truncate text after end of string token
             tokens = (
                 tok_list
-                if tokenizer.eos_id() not in tok_list
-                else tok_list[: tok_list.index(tokenizer.eos_id())]
+                if 128001 not in tok_list
+                else tok_list[: tok_list.index(128001)]
             )
             print(tokenizer.decode(tokens))
         else:
