@@ -514,6 +514,8 @@ def main(
             continue
         if hasattr(prof, "export_chrome_trace"):
             prof.export_chrome_trace(f"{profile}.json")
+            print(f"\n Execution profile {profile}.json saved.")
+
         device_sync(device=device)  # MKG
         t = time.perf_counter() - t0
 
