@@ -1,5 +1,5 @@
-# Inference Profiling and Optimization Guide
-A collection of inference profiling problems that I've discovered during my work. This repo contains worklogs for each of those problems and is meant as a guide to help develop intuition for systematically analyzing profiling problems and finding the rootcause of slowdown.
+# Inference Profiling and Optimization Worklog
+A collection of inference profiling problems that I've discovered during my work. This repo contains worklogs for each of those problems and is meant as a guide to help develop intuition for systematically analyzing profiling problems and finding the root cause of slowdown.
 
 Each problem has a docker container for reproducibility of the environment and the inference slowdown.
 
