@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # install nsight-systems-cli
 RUN apt-get update && \
     apt-get install -y --no-install-recommends gnupg && \
-    echo "http://developer.download.nvidia.com/devtools/repos/ubuntu2204/amd64/" | tee /etc/apt/sources.list.d/nvidia-devtools.list && \
+    echo "deb http://developer.download.nvidia.com/devtools/repos/ubuntu2204/amd64/ /" | tee /etc/apt/sources.list.d/nvidia-devtools.list && \
     apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub && \
     apt-get update && \
     apt-get install -y --no-install-recommends nsight-systems-cli && \
@@ -49,8 +49,8 @@ RUN sh /uv-installer.sh && rm /uv-installer.sh
 ENV PATH="/root/.local/bin/:$PATH"
 
 # Accept build arguments for git repo and commit
-ARG GIT_REPO
-ARG GIT_COMMIT
+ARG GIT_REPO=https://github.com/vipulSharma18/Inference-Profiling-and-Optimization-Worklog.git
+ARG GIT_COMMIT="HEAD"
 
 # Set working directory
 WORKDIR /workspace

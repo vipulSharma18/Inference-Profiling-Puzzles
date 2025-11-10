@@ -1,4 +1,4 @@
-name: Build
+name: Build-Gemlite
 
 on:
   push:
