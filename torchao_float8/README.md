@@ -33,15 +33,15 @@ As a first, and possibly only step, we use the GPT-Fast benchmark provided by To
 The 0-th inference iteration is profiled with CUDA memory snapshot. The snapshots are available at the following paths: `llama_benchmark/Meta-Llama-3.1-8B_None_torch_memory_profiler.pickle`, `llama_benchmark/Meta-Llama-3.1-8B_float8dq-tensor_torch_memory_profiler.pickle`, `llama_benchmark/Meta-Llama-3.1-8B_float8wo_torch_memory_profiler.pickle`.
 
 <div align="center">
-  <img src="figures/none_whole_timeline.png" alt="Baseline Whole Timeline" width="800">
+  <img src="figures/none_whole_timeline.png?v=2" alt="Baseline Whole Timeline" width="800">
   <p><strong>Figure 1:</strong> Baseline Whole Timeline</p>
 </div>
 <div align="center">
-  <img src="figures/float8dq_whole_timeline.png" alt="FP8 Weights and Activations DQ Whole Timeline" width="800">
+  <img src="figures/float8dq_whole_timeline.png?v=2" alt="FP8 Weights and Activations DQ Whole Timeline" width="800">
   <p><strong>Figure 2:</strong> FP8 Weights and Activations DQ Whole Timeline</p>
 </div>
 <div align="center">
-  <img src="figures/float8wo_whole_timeline.png" alt="FP8 Weights Only Static Quantization Whole Timeline" width="800">
+  <img src="figures/float8wo_whole_timeline.png?v=2" alt="FP8 Weights Only Static Quantization Whole Timeline" width="800">
   <p><strong>Figure 3:</strong> FP8 Weights Only Static Quantization Whole Timeline</p>
 </div>
 
