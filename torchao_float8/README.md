@@ -55,6 +55,8 @@ Revisiting the GPT-Fast code in generate.py, we can see there are 4 different ph
 3. Quantized Prefill.
 4. Quantized Decode.
 
+#TODO: note for myself: i starts from -1 while memory snapshot is at i=0. check this. i think even in memory snapshot there's 2 iterations.
+
 ## Torch Execution Trace
 ### Baseline
 
