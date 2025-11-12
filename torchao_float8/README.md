@@ -50,12 +50,11 @@ The 0-th inference iteration is profiled with CUDA memory snapshot. The snapshot
 For diving deeper, we can zoom-in on the blocks and the regions around them, and view their call stack. This reveals that most of the quantization, compilation, and inference activity actually happens in the narrow slice of memory at the top. Further, we can see different phases of inference in the memory timeline. For example, all the encircled rectangular blocks of memory have a call stack related to Torch Dynamo, Inductor, and CUDA Graph Trees, indicating that this memory was active during the compilation of the decode function.
 
 Revisiting the GPT-Fast code in generate.py, we can see there are 4 different phases of inference:
-1. Quantization.
-2. Compilation of decode which involves tracing through the model layers (deferred CUDAGraph Trees).
-3. Quantized Prefill.
-4. Quantized Decode.
-
-#TODO: note for myself: i starts from -1 while memory snapshot is at i=0. check this. i think even in memory snapshot there's 2 iterations.
+1. Quantization, except for baseline.
+2. Compilation of decode's forward call.
+3. Dummy inference pass used for tracing and compilation by Torch Dynamo and Inductor.
+4. Real inference passes: Prefill with a quantized model.
+5. Real inference passes: Decode with quantized model and compiled forward call.
 
 ## Torch Execution Trace
 ### Baseline
