@@ -91,7 +91,7 @@ requires-dist = [
     { name = "requests" },
     { name = "safetensors" },
     { name = "torch", index = "https://download.pytorch.org/whl/cu128" },
-    { name = "torchao", index = "https://download.pytorch.org/whl/cu128" },
+    { name = "torchao", specifier = ">=0.15.0.dev0", index = "https://download.pytorch.org/whl/nightly/cu128" },
 ]
 
 [[package]]
@@ -528,10 +528,10 @@ wheels = [
 
 [[package]]
 name = "torchao"
-version = "0.14.1+cu128"
-source = { registry = "https://download.pytorch.org/whl/cu128" }
+version = "0.15.0.dev20251114+cu128"
+source = { registry = "https://download.pytorch.org/whl/nightly/cu128" }
 wheels = [
-    { url = "https://download.pytorch.org/whl/cu128/torchao-0.14.1%2Bcu128-cp310-abi3-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:c70ef7f6c749d8bafd984ca2ef2e7fc90e3197f5519b409cf29c5b6f24474a4b" },
+    { url = "https://download.pytorch.org/whl/nightly/cu128/torchao-0.15.0.dev20251114%2Bcu128-cp310-abi3-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl" },
 ]
 
 [[package]]

@@ -91,7 +91,7 @@ requires-dist = [
     { name = "requests" },
     { name = "safetensors" },
     { name = "torch", index = "https://download.pytorch.org/whl/cu128" },
-    { name = "torchao", index = "https://download.pytorch.org/whl/cu128" },
+    { name = "torchao", specifier = ">=0.15.0.dev0", index = "https://download.pytorch.org/whl/nightly/cu128" },
 ]
 
 [[package]]
@@ -137,7 +137,7 @@ requires-dist = [
     { name = "common-utils", editable = "../common_utils" },
     { name = "gemlite", git = "https://github.com/dropbox/gemlite.git" },
     { name = "torch", specifier = "==2.8.0", index = "https://download.pytorch.org/whl/cu128" },
-    { name = "torchao", specifier = "==0.13.0", index = "https://download.pytorch.org/whl/cu128" },
+    { name = "torchao", specifier = ">=0.15.0.dev0", index = "https://download.pytorch.org/whl/nightly/cu128" },
 ]
 
 [[package]]
@@ -575,10 +575,10 @@ wheels = [
 
 [[package]]
 name = "torchao"
-version = "0.13.0+cu128"
-source = { registry = "https://download.pytorch.org/whl/cu128" }
+version = "0.15.0.dev20251114+cu128"
+source = { registry = "https://download.pytorch.org/whl/nightly/cu128" }
 wheels = [
-    { url = "https://download.pytorch.org/whl/cu128/torchao-0.13.0%2Bcu128-cp39-abi3-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:11da216b22c23fefc9c4a220bec0516f44a961da84fd560407ce22bbb08cda4d" },
+    { url = "https://download.pytorch.org/whl/nightly/cu128/torchao-0.15.0.dev20251114%2Bcu128-cp310-abi3-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl" },
 ]
 
 [[package]]
